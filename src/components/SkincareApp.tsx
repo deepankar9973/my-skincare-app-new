@@ -839,11 +839,11 @@ const SkincareApp = () => {
       requests: [
         {
           image: {
-            content: imageBase64, // Base64-encoded image string
+            content: imageBase64,
           },
           features: [
             {
-              type: 'LABEL_DETECTION', // Example feature
+              type: 'LABEL_DETECTION',
               maxResults: 10,
             },
           ],
