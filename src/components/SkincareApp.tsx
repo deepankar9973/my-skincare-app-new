@@ -78,6 +78,16 @@ const SkincareApp = () => {
   const analyzePhotos = async () => {
     setCurrentStep('analyzing');
     try {
+      console.log('Calling Vision API...');
+      const frontPhotoBase64 = photos.front?.file; // Replace with actual Base64 string of the photo
+      const visionResponse = await analyzeImageWithVisionAPI(frontPhotoBase64);
+
+      if (visionResponse) {
+        console.log('Vision API Response:', visionResponse);
+        // Process the Vision API response here
+      }
+
+      // Simulate analysis completion
       await new Promise(resolve => setTimeout(resolve, 4000));
       const enhancedAnalysis = {
         overallScore: 72,
@@ -90,13 +100,13 @@ const SkincareApp = () => {
           dry: questionnaire.skinType === 'dry' ? 60 : 0,
           sensitive: questionnaire.skinType === 'sensitive' ? 55 : 0,
           nonPigmented: 0,
-          tight: 0
+          tight: 0,
         },
         subSkinTypes: {
           acneProne: questionnaire.concerns.includes('acne') ? 65 : 0,
           acneResistant: 8,
           darkCircles: 0,
-          brightCircles: 58
+          brightCircles: 58,
         },
         concerns: [
           { type: 'Dermatopathy', severity: 'Moderate', area: '67.52cm²', percentage: 15 },
@@ -105,24 +115,25 @@ const SkincareApp = () => {
           { type: 'Large Pores', severity: 'Moderate', count: 42, percentage: 12 },
           { type: 'Pigmentation & Dark Spots', severity: 'Significant', area: '97.84cm²', percentage: 23 },
           { type: 'Blackheads', severity: 'High', count: 127, percentage: 18 },
-          { type: 'Oily T-Zone', severity: 'Moderate', percentage: 14 }
+          { type: 'Oily T-Zone', severity: 'Moderate', percentage: 14 },
         ],
         comparisonData: {
           betterThan: 68,
           worseUser: 32,
           avgIndianSkinScore: 64,
           yourRanking: '32nd percentile',
-          commonIssuesInIndia: ['Pigmentation (78%)', 'Oily Skin (65%)', 'Blackheads (52%)', 'Sun Damage (71%)']
+          commonIssuesInIndia: ['Pigmentation (78%)', 'Oily Skin (65%)', 'Blackheads (52%)', 'Sun Damage (71%)'],
         },
         recommendations: [
           'Use oil-control products with niacinamide',
           'Daily SPF 50+ is crucial for Indian climate',
           'Incorporate gentle chemical exfoliation (BHA)',
           'Focus on pigmentation control with vitamin C',
-          'Hydrating toner for oily but dehydrated skin'
+          'Hydrating toner for oily but dehydrated skin',
         ],
-        confidenceScore: 94
+        confidenceScore: 94,
       };
+
       // Save to DB (optional, can be commented if not needed)
       try {
         await saveAnalysis({
@@ -142,7 +153,7 @@ const SkincareApp = () => {
       setAnalysis(enhancedAnalysis);
       setCurrentStep('results');
     } catch (error) {
-      console.error('Analysis error:', error);
+      console.error('Error analyzing photos:', error);
       setCurrentStep('results');
     }
   };
@@ -819,6 +830,48 @@ const SkincareApp = () => {
       </div>
     )
   );
+
+  const analyzeImageWithVisionAPI = async (imageBase64) => {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_VISION_API_KEY;
+    const endpoint = `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`;
+
+    const requestBody = {
+      requests: [
+        {
+          image: {
+            content: imageBase64, // Base64-encoded image string
+          },
+          features: [
+            {
+              type: 'LABEL_DETECTION', // Example feature
+              maxResults: 10,
+            },
+          ],
+        },
+      ],
+    };
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Vision API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('Vision API Response:', data);
+      return data;
+    } catch (error) {
+      console.error('Error calling Vision API:', error);
+      return null;
+    }
+  };
 
   // Main render logic
   if (currentStep === 'landing') return <LandingPage />;
